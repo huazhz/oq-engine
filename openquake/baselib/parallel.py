@@ -334,11 +334,11 @@ def safely_call(func, args):
         if args and hasattr(args[0], 'unpickle'):
             # args is a list of Pickled objects
             args = [a.unpickle() for a in args]
-        if args:
+        if args and isinstance(args[-1], Monitor):
             mon = args[-1]
             mon.operation = func.__name__
             mon.children.append(child)  # child is a child of mon
-        else:
+        else:  # in the DbServer
             mon = child
         try:
             res = Result(func(*args), mon)
