@@ -187,6 +187,7 @@ class EbrCalculator(base.RiskCalculator):
             self.sitecol = ebcalc.sitecol
             self.assetcol = ebcalc.datastore['assetcol']
             self.riskmodel = ebcalc.riskmodel
+            self.num_events = ebcalc.num_events
 
         self.L = len(self.riskmodel.lti)
         self.T = len(self.assetcol.tagcol)
@@ -198,7 +199,8 @@ class EbrCalculator(base.RiskCalculator):
             if oq.return_periods != [0]:
                 # setting return_periods = 0 disable loss curves and maps
                 self.param['builder'] = get_loss_builder(
-                    parent, oq.return_periods, oq.loss_dt())
+                    parent, oq.return_periods, oq.loss_dt(),
+                    self.num_events)
             self.eids = sorted(parent['events']['eid'])
         else:
             self.eids = sorted(self.datastore['events']['eid'])
@@ -350,8 +352,8 @@ class EbrCalculator(base.RiskCalculator):
         # store avg_losses-stats
         if oq.avg_losses:
             set_rlzs_stats(self.datastore, 'avg_losses')
-        #b = get_loss_builder(self.datastore)
-        b = self.param['builder']
+        b = get_loss_builder(self.datastore)
+        #b = self.param['builder']
         if 'ruptures' in dstore:
             logging.info('Building loss tables')
             with self.monitor('building loss tables', measuremem=True):

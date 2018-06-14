@@ -818,6 +818,7 @@ def save_gmdata(calc, n_rlzs):
         gmv = data[:-1] / events / n_sites
         array[rlzi] = tuple(gmv) + (events,)
     calc.datastore['gmdata'] = array
+    calc.num_events = array['events']
 
 
 def save_gmfs(calculator):
