@@ -94,7 +94,8 @@ class ClassicalDamageTestCase(CalculatorTestCase):
     def check(self, case):
         self.run_calc(case.__file__, 'job_haz.ini')
         self.run_calc(case.__file__, 'job_risk.ini',
-                      hazard_calculation_id=str(self.calc.datastore.calc_id))
+                      hazard_calculation_id=str(self.calc.datastore.calc_id),
+                      concurrent_tasks='0')  # avoid fork bug in case_6a
         fnames = export(('damages-rlzs', 'csv'), self.calc.datastore)
         if len(fnames) == 1:
             self.assertEqualFiles('expected/damages.csv', fnames[0])

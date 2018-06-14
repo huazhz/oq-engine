@@ -304,6 +304,7 @@ def compute_gmfs_and_curves(getters, oq, monitor):
         a list of dictionaries with keys gmfcoll and hcurves
     """
     results = []
+    dt = oq.gmf_data_dt()
     for getter in getters:
         with monitor('GmfGetter.init', measuremem=True):
             getter.init()
@@ -312,7 +313,7 @@ def compute_gmfs_and_curves(getters, oq, monitor):
             hc_mon = monitor('building hazard curves', measuremem=False)
             duration = oq.investigation_time * oq.ses_per_logic_tree_path
             with monitor('building hazard', measuremem=True):
-                gmfdata = numpy.fromiter(getter.gen_gmv(), getter.gmf_data_dt)
+                gmfdata = numpy.fromiter(getter.gen_gmv(), dt)
                 hazard = getter.get_hazard(data=gmfdata)
             for sid, hazardr in zip(getter.sids, hazard):
                 for rlzi, array in hazardr.items():
@@ -327,7 +328,7 @@ def compute_gmfs_and_curves(getters, oq, monitor):
                             hcurves[rsi2str(rlzi, sid, imt)] = poes
         else:  # fast lane
             with monitor('building hazard', measuremem=True):
-                gmfdata = numpy.fromiter(getter.gen_gmv(), getter.gmf_data_dt)
+                gmfdata = numpy.fromiter(getter.gen_gmv(), dt)
         indices = []
         gmfdata.sort(order=('sid', 'rlzi', 'eid'))
         start = stop = 0
@@ -371,12 +372,11 @@ class EventBasedCalculator(base.HazardCalculator):
         """
         sav_mon = self.monitor('saving gmfs')
         agg_mon = self.monitor('aggregating hcurves')
-        hdf5path = self.datastore.hdf5path
         for res in results:
             self.gmdata += res['gmdata']
             data = res['gmfdata']
             with sav_mon:
-                hdf5.extend3(hdf5path, 'gmf_data/data', data)
+                hdf5.extend(self.datastore['gmf_data/data'], data)
                 # it is important to save the number of bytes while the
                 # computation is going, to see the progress
                 update_nbytes(self.datastore, 'gmf_data/data', data)
@@ -456,6 +456,7 @@ class EventBasedCalculator(base.HazardCalculator):
                       for sm in self.csm_info.source_models}
         L = len(oq.imtls.array)
         R = self.datastore['csm_info'].get_num_rlzs()
+        self.datastore.create_dset('gmf_data/data', oq.gmf_data_dt())
         self.gmdata = {}
         self.offset = 0
         self.indices = collections.defaultdict(list)  # sid -> indices

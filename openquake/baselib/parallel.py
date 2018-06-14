@@ -168,7 +168,7 @@ except ImportError:
 
 from openquake.baselib import hdf5, config
 from openquake.baselib.zeromq import zmq, Socket
-from openquake.baselib.performance import Monitor
+from openquake.baselib.performance import Monitor, perf_dt
 from openquake.baselib.general import (
     split_in_blocks, block_splitter, AccumDict, humansize)
 
@@ -338,7 +338,6 @@ def safely_call(func, args):
             mon = args[-1]
             mon.operation = func.__name__
             mon.children.append(child)  # child is a child of mon
-            child.hdf5path = mon.hdf5path
         else:
             mon = child
         try:
@@ -376,28 +375,29 @@ class IterResult(object):
         the name of the task
     :param num_tasks:
         the total number of expected tasks
-    :param progress:
-        a logging function for the progress report
     :param sent:
         the number of bytes sent (0 if OQ_DISTRIBUTE=no)
+    :param progress:
+        a logging function for the progress report
+    :param hdf5:
+        if given, hdf5 file where to append the performance information
     """
     def __init__(self, iresults, taskname, argnames, num_tasks, sent,
-                 progress=logging.info):
+                 progress=logging.info, hdf5dt=None):
         self.iresults = iresults
         self.name = taskname
         self.argnames = ' '.join(argnames)
         self.num_tasks = num_tasks
         self.sent = sent
         self.progress = progress
+        if hdf5dt:
+            self.hdf5, self.task_data_dt = hdf5dt
         self.received = []
         if self.num_tasks:
             self.log_percent = self._log_percent()
             next(self.log_percent)
         else:
             self.progress('No %s tasks were submitted', self.name)
-        self.task_data_dt = numpy.dtype(
-            [('taskno', numpy.uint32), ('weight', numpy.float32),
-             ('duration', numpy.float32), ('received', numpy.int64)])
         self.progress('Sent %s of data in %s task(s)',
                       humansize(sent.sum()), num_tasks)
 
@@ -441,12 +441,12 @@ class IterResult(object):
                           humansize(tot), humansize(max_per_task))
 
     def save_task_info(self, mon):
-        if mon.hdf5path:
+        if self.hdf5:
             duration = mon.children[0].duration  # the task is the first child
             tup = (mon.task_no, mon.weight, duration, self.received[-1])
             data = numpy.array([tup], self.task_data_dt)
-            hdf5.extend3(mon.hdf5path, 'task_info/' + self.name, data,
-                         argnames=self.argnames, sent=self.sent)
+            hdf5.extend(self.hdf5['task_info/' + self.name], data,
+                        argnames=self.argnames, sent=self.sent)
         mon.flush()
 
     def reduce(self, agg=operator.add, acc=None):
@@ -589,12 +589,23 @@ class Starmap(object):
         """
         for task_no, args in enumerate(self.task_args, 1):
             mon = args[-1]
-            if isinstance(mon, Monitor):
-                # add incremental task number and task weight
-                mon.task_no = task_no
-                mon.weight = getattr(args[0], 'weight', 1.)
-                mon.backurl = backurl
-                self.calc_id = getattr(mon, 'calc_id', None)
+            assert isinstance(mon, Monitor), mon
+            if task_no == 1:
+                task_data_dt = numpy.dtype(
+                    [('taskno', numpy.uint32), ('weight', numpy.float32),
+                     ('duration', numpy.float32), ('received', numpy.int64)])
+                self.hdf5dt = (mon.hdf5, task_data_dt)
+                try:
+                    hdf5.create(mon.hdf5, 'task_info/' + self.name,
+                                task_data_dt)
+                except RuntimeError:  # name already exists
+                    pass
+                #hdf5.swmr_mode = True
+            # add incremental task number and task weight
+            mon.task_no = task_no
+            mon.weight = getattr(args[0], 'weight', 1.)
+            mon.backurl = backurl
+            self.calc_id = getattr(mon, 'calc_id', None)
             if pickle:
                 args = pickle_sequence(args)
                 self.sent += numpy.array([len(p) for p in args])
@@ -617,7 +628,7 @@ class Starmap(object):
             it = self._iter_zmq()
         num_tasks = next(it)
         return IterResult(it, self.name, self.argnames, num_tasks,
-                          self.sent, self.progress)
+                          self.sent, self.progress, self.hdf5dt)
 
     def reduce(self, agg=operator.add, acc=None):
         """
