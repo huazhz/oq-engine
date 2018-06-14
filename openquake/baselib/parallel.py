@@ -168,7 +168,7 @@ except ImportError:
 
 from openquake.baselib import hdf5, config
 from openquake.baselib.zeromq import zmq, Socket
-from openquake.baselib.performance import Monitor, perf_dt
+from openquake.baselib.performance import Monitor
 from openquake.baselib.general import (
     split_in_blocks, block_splitter, AccumDict, humansize)
 
@@ -445,6 +445,7 @@ class IterResult(object):
             duration = mon.children[0].duration  # the task is the first child
             tup = (mon.task_no, mon.weight, duration, self.received[-1])
             data = numpy.array([tup], self.task_data_dt)
+            print('Writing on %s' % self.hdf5.filename)
             hdf5.extend(self.hdf5['task_info/' + self.name], data,
                         argnames=self.argnames, sent=self.sent)
         mon.flush()

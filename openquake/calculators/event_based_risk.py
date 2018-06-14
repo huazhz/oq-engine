@@ -350,7 +350,8 @@ class EbrCalculator(base.RiskCalculator):
         # store avg_losses-stats
         if oq.avg_losses:
             set_rlzs_stats(self.datastore, 'avg_losses')
-        b = get_loss_builder(self.datastore)
+        #b = get_loss_builder(self.datastore)
+        b = self.param['builder']
         if 'ruptures' in dstore:
             logging.info('Building loss tables')
             with self.monitor('building loss tables', measuremem=True):

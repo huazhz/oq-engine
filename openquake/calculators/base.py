@@ -125,9 +125,6 @@ class BaseCalculator(metaclass=abc.ABCMeta):
         self.datastore = datastore.DataStore(calc_id)
         self._monitor = Monitor(
             '%s.run' % self.__class__.__name__, measuremem=True)
-        self._monitor.hdf5 = self.datastore.hdf5
-        if 'performance_data' not in self.datastore:
-            self.datastore.create_dset('performance_data', perf_dt)
         self.oqparam = oqparam
 
     def monitor(self, operation, **kw):
@@ -169,6 +166,9 @@ class BaseCalculator(metaclass=abc.ABCMeta):
         global logversion
         with self._monitor:
             self._monitor.username = kw.get('username', '')
+            self._monitor.hdf5 = self.datastore.hdf5
+            if 'performance_data' not in self.datastore:
+                self.datastore.create_dset('performance_data', perf_dt)
             self.close = close
             self.set_log_format()
             if logversion:  # make sure this is logged only once
@@ -779,7 +779,6 @@ class RiskCalculator(HazardCalculator):
         mon = self.monitor('risk')
         all_args = [(riskinput, self.riskmodel, self.param, mon)
                     for riskinput in self.riskinputs]
-        Starmap.shutdown()
         res = Starmap(self.core_task.__func__, all_args).reduce(self.combine)
         return res
 
