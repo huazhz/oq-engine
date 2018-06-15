@@ -175,17 +175,15 @@ class EbrCalculator(base.RiskCalculator):
                     'The parent calculation was using minimum_intensity=%s'
                     ' != %s' % (oqp.minimum_intensity, oq.minimum_intensity))
         else:
-            ebcalc = base.calculators[self.pre_calculator](self.oqparam)
+            ebcalc = base.calculators[self.pre_calculator](
+                self.oqparam, self.datastore.calc_id)
             ebcalc.run(close=False)
             self.set_log_format()
-            parent = self.dynamic_parent = self.datastore.parent = (
-                ebcalc.datastore)
-            oq.hazard_calculation_id = parent.calc_id
-            self.datastore['oqparam'] = oq
             self.param = ebcalc.param
             self.sitecol = ebcalc.sitecol
             self.assetcol = ebcalc.datastore['assetcol']
             self.riskmodel = ebcalc.riskmodel
+            parent = ()
 
         self.L = len(self.riskmodel.lti)
         self.T = len(self.assetcol.tagcol)
