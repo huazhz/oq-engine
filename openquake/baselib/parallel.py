@@ -446,6 +446,7 @@ class IterResult(object):
 
     def save_task_info(self, mon):
         if self.hdf5:
+            mon.hdf5 = self.hdf5
             duration = mon.children[0].duration  # the task is the first child
             tup = (mon.task_no, mon.weight, duration, self.received[-1])
             data = numpy.array([tup], task_data_dt)

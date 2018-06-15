@@ -151,6 +151,7 @@ class Monitor(object):
                 'Monitor(%r).flush() must not be called in a worker' %
                 self.operation)
         for child in self.children:
+            child.hdf5 = self.hdf5
             child.flush()
         data = self.get_data()
         if len(data) == 0:  # no information
