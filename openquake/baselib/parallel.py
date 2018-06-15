@@ -180,6 +180,11 @@ if OQ_DISTRIBUTE == 'futures':  # legacy name
 if OQ_DISTRIBUTE not in ('no', 'processpool', 'threadpool', 'celery', 'zmq'):
     raise ValueError('Invalid oq_distribute=%s' % OQ_DISTRIBUTE)
 
+# data type for storing the performance information
+task_data_dt = numpy.dtype(
+    [('taskno', numpy.uint32), ('weight', numpy.float32),
+     ('duration', numpy.float32), ('received', numpy.int64)])
+
 
 def oq_distribute(task=None):
     """
@@ -383,15 +388,14 @@ class IterResult(object):
         if given, hdf5 file where to append the performance information
     """
     def __init__(self, iresults, taskname, argnames, num_tasks, sent,
-                 progress=logging.info, hdf5dt=None):
+                 progress=logging.info, hdf5=None):
         self.iresults = iresults
         self.name = taskname
         self.argnames = ' '.join(argnames)
         self.num_tasks = num_tasks
         self.sent = sent
         self.progress = progress
-        if hdf5dt:
-            self.hdf5, self.task_data_dt = hdf5dt
+        self.hdf5 = hdf5
         self.received = []
         if self.num_tasks:
             self.log_percent = self._log_percent()
@@ -444,7 +448,7 @@ class IterResult(object):
         if self.hdf5:
             duration = mon.children[0].duration  # the task is the first child
             tup = (mon.task_no, mon.weight, duration, self.received[-1])
-            data = numpy.array([tup], self.task_data_dt)
+            data = numpy.array([tup], task_data_dt)
             hdf5.extend(self.hdf5['task_info/' + self.name], data,
                         argnames=self.argnames, sent=self.sent)
         mon.flush()
@@ -502,6 +506,7 @@ def _wakeup(sec, mon):
 class Starmap(object):
     task_ids = []
     calc_id = None
+    hdf5 = None
 
     @classmethod
     def init(cls, poolsize=None, distribute=OQ_DISTRIBUTE):
@@ -590,17 +595,14 @@ class Starmap(object):
         for task_no, args in enumerate(self.task_args, 1):
             mon = args[-1]
             assert isinstance(mon, Monitor), mon
-            if task_no == 1:
-                task_data_dt = numpy.dtype(
-                    [('taskno', numpy.uint32), ('weight', numpy.float32),
-                     ('duration', numpy.float32), ('received', numpy.int64)])
-                self.hdf5dt = (mon.hdf5, task_data_dt)
+            if mon.hdf5 and task_no == 1:
+                self.hdf5 = mon.hdf5
                 try:
                     hdf5.create(mon.hdf5, 'task_info/' + self.name,
                                 task_data_dt)
                 except RuntimeError:  # name already exists
                     pass
-                #hdf5.swmr_mode = True
+
             # add incremental task number and task weight
             mon.task_no = task_no
             mon.weight = getattr(args[0], 'weight', 1.)
@@ -628,7 +630,7 @@ class Starmap(object):
             it = self._iter_zmq()
         num_tasks = next(it)
         return IterResult(it, self.name, self.argnames, num_tasks,
-                          self.sent, self.progress, self.hdf5dt)
+                          self.sent, self.progress, self.hdf5)
 
     def reduce(self, agg=operator.add, acc=None):
         """
