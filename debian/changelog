@@ -1,3 +1,7 @@
+  [Michele Simionato]
+  * Changed the Starmap framework to require functions which last argument
+    is a Monitor instance
+
   [Daniele Viganò]
   * Added the hostname in the WebUI page. It can be customize by the user
     via the `local_settings.py` file
