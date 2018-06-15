@@ -21,7 +21,6 @@ import numpy
 
 from openquake.baselib.python3compat import zip, encode
 from openquake.baselib.general import AccumDict
-from openquake.baselib.parallel import Starmap
 from openquake.hazardlib.stats import set_rlzs_stats
 from openquake.risklib import riskinput
 from openquake.calculators import base
@@ -187,7 +186,6 @@ class EbrCalculator(base.RiskCalculator):
             self.sitecol = ebcalc.sitecol
             self.assetcol = ebcalc.datastore['assetcol']
             self.riskmodel = ebcalc.riskmodel
-            self.num_events = ebcalc.num_events
 
         self.L = len(self.riskmodel.lti)
         self.T = len(self.assetcol.tagcol)
@@ -196,14 +194,19 @@ class EbrCalculator(base.RiskCalculator):
         if parent:
             self.datastore['csm_info'] = parent['csm_info']
             self.rlzs_assoc = parent['csm_info'].get_rlzs_assoc()
-            if oq.return_periods != [0]:
-                # setting return_periods = 0 disable loss curves and maps
-                self.param['builder'] = get_loss_builder(
-                    parent, oq.return_periods, oq.loss_dt(),
-                    self.num_events)
             self.eids = sorted(parent['events']['eid'])
         else:
             self.eids = sorted(self.datastore['events']['eid'])
+        if oq.return_periods != [0]:
+            # setting return_periods = 0 disable loss curves and maps
+            eff_time = oq.investigation_time * oq.ses_per_logic_tree_path
+            if eff_time < 2:
+                logging.warn('eff_time=%s is too small to compute loss curves',
+                             eff_time)
+            else:
+                self.param['builder'] = get_loss_builder(
+                    parent if parent else self.datastore,
+                    oq.return_periods, oq.loss_dt())
         # sorting the eids is essential to get the epsilons in the right
         # order (i.e. consistent with the one used in ebr from ruptures)
         self.E = len(self.eids)
@@ -343,17 +346,14 @@ class EbrCalculator(base.RiskCalculator):
         dstore = self.datastore
         self.before_export()  # set 'realizations'
         oq = self.oqparam
-        eff_time = oq.investigation_time * oq.ses_per_logic_tree_path
-        if eff_time < 2:
-            logging.warn('eff_time=%s is too small to compute agg_curves',
-                         eff_time)
-            return
         stats = oq. risk_stats()
         # store avg_losses-stats
         if oq.avg_losses:
             set_rlzs_stats(self.datastore, 'avg_losses')
-        b = get_loss_builder(self.datastore)
-        #b = self.param['builder']
+        try:
+            b = self.param['builder']
+        except KeyError:  # don't build auxiliary tables
+            return
         if 'ruptures' in dstore:
             logging.info('Building loss tables')
             with self.monitor('building loss tables', measuremem=True):
