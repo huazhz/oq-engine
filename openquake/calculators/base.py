@@ -358,6 +358,8 @@ class HazardCalculator(BaseCalculator):
                 'gmf_data' not in self.datastore.hdf5):
             self.datastore.parent.close()  # make sure it is closed
             return self.datastore.parent
+        logging.warn('With a parent calculation reading the hazard '
+                     'would be much faster')
 
     def compute_previous(self):
         precalc = calculators[self.pre_calculator](
@@ -707,7 +709,7 @@ class RiskCalculator(HazardCalculator):
         :returns:
             a list of RiskInputs objects, sorted by IMT.
         """
-        logging.info('Found %d realization(s)', self.R)
+        logging.info('Building risk inputs from %d realization(s)', self.R)
         imtls = self.oqparam.imtls
         if not set(self.oqparam.risk_imtls) & set(imtls):
             rsk = ', '.join(self.oqparam.risk_imtls)
@@ -760,7 +762,6 @@ class RiskCalculator(HazardCalculator):
                                        self.oqparam.imtls)
             if dstore is self.datastore:
                 # read the hazard data in the controller node
-                logging.info('Reading hazard')
                 getter.init()
             else:
                 # the datastore must be closed to avoid the HDF5 fork bug
