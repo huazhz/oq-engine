@@ -77,8 +77,7 @@ class ClassicalDamageCase2TestCase(CalculatorTestCase):
 class ClassicalDamageCase8TestCase(CalculatorTestCase):
     @attr('qa', 'risk', 'classical_damage')
     def test_case_8a(self):
-        self.run_calc(
-            case_8a.__file__, 'job_haz.ini,job_risk.ini')
+        self.run_calc(case_8a.__file__, 'job_haz.ini,job_risk.ini')
         f1, f2 = export(('damages-rlzs', 'csv'), self.calc.datastore)
         self.assertEqualFiles(
             'expected/damages-rlzs-AkkarBommer2010().csv', f2)
@@ -95,7 +94,7 @@ class ClassicalDamageTestCase(CalculatorTestCase):
         self.run_calc(case.__file__, 'job_haz.ini')
         self.run_calc(case.__file__, 'job_risk.ini',
                       hazard_calculation_id=str(self.calc.datastore.calc_id),
-                      concurrent_tasks='0')  # avoid fork bug in case_6a
+                      concurrent_tasks='0')  # avoid fork bug
         fnames = export(('damages-rlzs', 'csv'), self.calc.datastore)
         if len(fnames) == 1:
             self.assertEqualFiles('expected/damages.csv', fnames[0])

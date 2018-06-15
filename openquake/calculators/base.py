@@ -168,7 +168,6 @@ class BaseCalculator(metaclass=abc.ABCMeta):
             self._monitor.hdf5 = self.datastore.hdf5
             if 'performance_data' not in self.datastore:
                 self.datastore.create_dset('performance_data', perf_dt)
-            self.close = close
             self.set_log_format()
             if logversion:  # make sure this is logged only once
                 logging.info('Running %s', self.oqparam.inputs['job_ini'])
@@ -185,7 +184,7 @@ class BaseCalculator(metaclass=abc.ABCMeta):
                 # save the used concurrent_tasks
                 self.oqparam.concurrent_tasks = ct
             self.save_params(**kw)
-            Starmap.init()
+            Starmap.init(distribute=os.environ['OQ_DISTRIBUTE'])
             try:
                 if pre_execute:
                     self.pre_execute()
@@ -212,7 +211,17 @@ class BaseCalculator(metaclass=abc.ABCMeta):
                 readinput.pmap = None
                 readinput.exposure = None
                 Starmap.shutdown()
-        self._monitor.flush()
+                self._monitor.flush()
+
+                if close:  # in the engine we close later
+                    self.result = None
+                    try:
+                        self.datastore.close()
+                    except (RuntimeError, ValueError):
+                        # sometimes produces errors but they are difficult to
+                        # reproduce
+                        logging.warn('', exc_info=True)
+
         return getattr(self, 'exported', {})
 
     def core_task(*args):
@@ -271,15 +280,6 @@ class BaseCalculator(metaclass=abc.ABCMeta):
                 self._export(('hmaps', fmt))
             if has_hcurves and self.oqparam.uniform_hazard_spectra:
                 self._export(('uhs', fmt))
-
-        if self.close:  # in the engine we close later
-            self.result = None
-            try:
-                self.datastore.close()
-            except (RuntimeError, ValueError):
-                # sometimes produces errors but they are difficult to
-                # reproduce
-                logging.warn('', exc_info=True)
 
     def _export(self, ekey):
         if ekey not in exp or self.exported.get(ekey):  # already exported

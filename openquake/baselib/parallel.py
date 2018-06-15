@@ -516,6 +516,8 @@ class Starmap(object):
             cls(_wakeup, [(.2, m) for _ in range(cls.pool._processes)])
         elif distribute == 'threadpool' and not hasattr(cls, 'pool'):
             cls.pool = multiprocessing.dummy.Pool(poolsize)
+        elif distribute == 'no' and hasattr(cls, 'pool'):
+            cls.shutdown()
 
     @classmethod
     def shutdown(cls, poolsize=None):
@@ -523,7 +525,7 @@ class Starmap(object):
             cls.pool.close()
             cls.pool.terminate()
             cls.pool.join()
-            delattr(cls, 'pool')
+            del cls.pool
 
     @classmethod
     def apply(cls, task, args, concurrent_tasks=cpu_count * 3,
