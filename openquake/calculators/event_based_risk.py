@@ -181,7 +181,7 @@ class EbrCalculator(base.RiskCalculator):
             self.set_log_format()
             self.param = ebcalc.param
             self.sitecol = ebcalc.sitecol
-            self.assetcol = ebcalc.datastore['assetcol']
+            self.assetcol = ebcalc.precalc.assetcol
             self.riskmodel = ebcalc.riskmodel
             parent = ()
 
@@ -231,9 +231,8 @@ class EbrCalculator(base.RiskCalculator):
     def build_datasets(self, builder):
         oq = self.oqparam
         R = len(builder.weights)
-        assetcol = self.datastore['assetcol']
         stats = oq.risk_stats()
-        A = len(assetcol)
+        A = len(self.assetcol)
         S = len(stats)
         P = len(builder.return_periods)
         C = len(self.oqparam.conditional_loss_poes)
