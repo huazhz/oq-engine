@@ -338,7 +338,7 @@ class EbrCalculator(base.RiskCalculator):
 
     def postproc(self):
         """
-        Build aggregate loss curves
+        Build aggregate loss curves in process
         """
         dstore = self.datastore
         self.before_export()  # set 'realizations'
@@ -351,6 +351,8 @@ class EbrCalculator(base.RiskCalculator):
             b = self.param['builder']
         except KeyError:  # don't build auxiliary tables
             return
+        if dstore.parent:
+            dstore.parent.open('r')  # to read the ruptures
         if 'ruptures' in dstore:
             logging.info('Building loss tables')
             with self.monitor('building loss tables', measuremem=True):
