@@ -231,9 +231,8 @@ class EbrCalculator(base.RiskCalculator):
     def build_datasets(self, builder):
         oq = self.oqparam
         R = len(builder.weights)
-        assetcol = self.datastore['assetcol']
         stats = oq.risk_stats()
-        A = len(assetcol)
+        A = self.A
         S = len(stats)
         P = len(builder.return_periods)
         C = len(self.oqparam.conditional_loss_poes)
