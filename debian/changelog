@@ -1,6 +1,7 @@
   [Michele Simionato]
-  * Changed the Starmap framework to require functions which last argument
-    is a Monitor instance
+  * Made the loss curves and maps outputs from an event based risk calculation
+    visible to the engine and the WebUI (only the stats)
+  * Added a check on duplicated branchIDs in GMPE logic trees
 
   [Daniele Viganò]
   * Changed the openquake.cfg file and added a dbserver.listen parameter

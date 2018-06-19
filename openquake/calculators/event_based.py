@@ -98,7 +98,6 @@ class EventBasedRuptureCalculator(base.HazardCalculator):
         Set the random seed passed to the SourceManager and the
         minimum_intensity dictionary.
         """
-        oq = self.oqparam
         self.rupser = calc.RuptureSerializer(self.datastore)
 
     def zerodict(self):
@@ -146,12 +145,11 @@ class EventBasedRuptureCalculator(base.HazardCalculator):
                     if self.oqparam.save_ruptures:
                         self.rupser.save(ebrs, eidx=len(dset)-len(events))
 
-    def gen_args(self, csm, monitor):
+    def gen_args(self, monitor):
         """
         Used in the case of large source model logic trees.
 
         :param monitor: a :class:`openquake.baselib.performance.Monitor`
-        :param csm: a reduced CompositeSourceModel
         :yields: (sources, sites, gsims, monitor) tuples
         """
         oq = self.oqparam
@@ -188,7 +186,7 @@ class EventBasedRuptureCalculator(base.HazardCalculator):
 
     def execute(self):
         with self.monitor('managing sources', autoflush=True):
-            allargs = self.gen_args(self.csm, self.monitor('classical'))
+            allargs = self.gen_args(self.monitor('classical'))
             iterargs = saving_sources_by_task(allargs, self.datastore)
             if isinstance(allargs, list):
                 # there is a trick here: if the arguments are known
