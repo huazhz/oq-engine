@@ -181,7 +181,7 @@ class EbrCalculator(base.RiskCalculator):
             self.set_log_format()
             self.param = ebcalc.param
             self.sitecol = ebcalc.sitecol
-            self.assetcol = ebcalc.datastore['assetcol']
+            self.assetcol = ebcalc.precalc.assetcol
             self.riskmodel = ebcalc.riskmodel
             parent = ()
 
