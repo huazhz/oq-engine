@@ -8,7 +8,9 @@ Running OpenQuake on an *MPI cluster* is currently not supported. See the [FAQ](
 
 ## Initial install
 
-Note: you have to **restart every celery node** after a configuration change.
+### Pre-requisites
+
+Have read [Installing on RedHat and derivatives](rhel.md) or [Installing on Ubuntu](ubuntu.md) (depending on the operating system been used).
 
 ### Master node
 The `python3-oq-engine-master` package must be installed on the **master** node. It provides extra functionalities like _RabbitMQ_.
@@ -19,6 +21,8 @@ On **RHEL/CentOS** [EPEL](https://fedoraproject.org/wiki/EPEL) repository *must 
 On **worker** nodes  `python3-oq-engine-worker` must be installed **instead**; it adds _celery_ support on top of the standard `python3-oq-engine` package.
 
 ## OpenQuake Engine 'master' node configuration File
+
+Note: you have to **restart every celery node** after a configuration change.
 
 ### Enable Celery
 
@@ -35,26 +39,28 @@ oq_distribute = celery
 ## OpenQuake Engine 'worker' node configuration File
 On all worker nodes, the `/etc/openquake/openquake.cfg` file should be also modified to set the *DbServer* and *RabbitMQ* daemons IP address:
 
-```
+```ini
 [amqp]
+# RabbitMQ server address
 host = w.x.y.z
 port = 5672
 user = openquake
 password = openquake
 vhost = openquake
-# This is where tasks will be enqueued.
 celery_queue = celery
 
 [dbserver]
-# enable multi_user if you have a multiple user installation
 multi_user = true
 file = /var/lib/openquake/db.sqlite3
 log = /var/lib/openquake/dbserver.log
+# daemon bind address; must be a valid IP address
+listen = 0.0.0.0
+# address of the dbserver; can be an hostname too
 host = w.x.y.z
 port = 1907
-authkey = changeme
+receiver_ports = 1912-1920
+authkey = somethingstronger
 ```
-
 
 ### Configuring daemons
 

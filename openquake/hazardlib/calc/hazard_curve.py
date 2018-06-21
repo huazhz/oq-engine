@@ -53,7 +53,7 @@ NB: the implementation in the engine is smarter and more
 efficient. Here we start a parallel computation per each realization,
 the engine manages all the realizations at once.
 """
-from __future__ import division
+import sys
 import time
 import operator
 import numpy
@@ -85,13 +85,15 @@ def classical(group, src_filter, gsims, param, monitor=Monitor()):
         mutex_weight = None
     grp_ids = set()
     for src in group:
+        if not src.num_ruptures:
+            # src.num_ruptures is set when parsing the XML, but not when
+            # the source is instantiated manually, so it is set here
+            src.num_ruptures = src.count_ruptures()
         grp_ids.update(src.src_group_ids)
     maxdist = src_filter.integration_distance
     imtls = param['imtls']
     trunclevel = param.get('truncation_level')
-    cmaker = ContextMaker(gsims, maxdist)
-    ctx_mon = monitor('make_contexts', measuremem=False)
-    poe_mon = monitor('get_poes', measuremem=False)
+    cmaker = ContextMaker(gsims, maxdist, param['filter_distance'], monitor)
     pmap = AccumDict({grp_id: ProbabilityMap(len(imtls.array), len(gsims))
                       for grp_id in grp_ids})
     # AccumDict of arrays with 4 elements weight, nsites, calc_time, split
@@ -100,8 +102,12 @@ def classical(group, src_filter, gsims, param, monitor=Monitor()):
     for src, s_sites in src_filter(group):  # filter now
         t0 = time.time()
         indep = group.rup_interdep == 'indep' if mutex_weight else True
-        poemap = cmaker.poe_map(
-            src, s_sites, imtls, trunclevel, ctx_mon, poe_mon, indep)
+        try:
+            poemap = cmaker.poe_map(src, s_sites, imtls, trunclevel, indep)
+        except Exception as err:
+            etype, err, tb = sys.exc_info()
+            msg = '%s (source id=%s)' % (str(err), src.source_id)
+            raise etype(msg).with_traceback(tb)
         if mutex_weight:  # mutex sources
             weight = mutex_weight[src.source_id]
             for sid in poemap:
@@ -123,7 +129,7 @@ def classical(group, src_filter, gsims, param, monitor=Monitor()):
 
 def calc_hazard_curves(
         groups, ss_filter, imtls, gsim_by_trt, truncation_level=None,
-        apply=sequential_apply):
+        apply=sequential_apply, filter_distance='rjb'):
     """
     Compute hazard curves on a list of sites, given a set of seismic source
     groups and a dictionary of ground shaking intensity models (one per
@@ -172,7 +178,8 @@ def calc_hazard_curves(
         ss_filter = SourceFilter(sitecol, {})
 
     imtls = DictArray(imtls)
-    param = dict(imtls=imtls, truncation_level=truncation_level)
+    param = dict(imtls=imtls, truncation_level=truncation_level,
+                 filter_distance=filter_distance)
     pmap = ProbabilityMap(len(imtls.array), 1)
     # Processing groups with homogeneous tectonic region
     gsim = gsim_by_trt[groups[0][0].tectonic_region_type]

@@ -15,9 +15,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with OpenQuake. If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
 import ast
-import math
 import os.path
 import numbers
 import operator
@@ -243,13 +241,10 @@ def view_ruptures_per_trt(token, dstore):
     eff_ruptures = 0
     tot_ruptures = 0
     csm_info = dstore['csm_info']
-    oq = dstore['oqparam']
-    num_sites = len(dstore['sitecol'])
-    num_tiles = math.ceil(num_sites / oq.sites_per_tile)
     for i, sm in enumerate(csm_info.source_models):
         for src_group in sm.src_groups:
             trt = source.capitalize(src_group.trt)
-            er = src_group.eff_ruptures / num_tiles
+            er = src_group.eff_ruptures
             if er:
                 num_trts += 1
                 eff_ruptures += er
@@ -260,8 +255,6 @@ def view_ruptures_per_trt(token, dstore):
             ('#eff_ruptures', eff_ruptures),
             ('#tot_ruptures', tot_ruptures),
             ('#tot_weight', csm_info.tot_weight)]
-    if num_tiles > 1:
-        rows.insert(0, ('#tiles', num_tiles))
     if len(tbl) > 1:
         summary = '\n\n' + rst_table(rows)
     else:
@@ -622,10 +615,12 @@ def view_task_classical(token, dstore):
      $ oq show task_classical:-1  # the slowest task
     """
     tasks = set(dstore['task_info'])
+    if 'task_info/source_data' not in dstore:
+        return 'Missing source_data'
     if 'classical' in tasks:
         data = dstore['task_info/classical'].value
     else:
-        data = dstore['task_info/count_ruptures'].value
+        data = dstore['task_info/count_eff_ruptures'].value
     data.sort(order='duration')
     rec = data[int(token.split(':')[1])]
     taskno = rec['taskno']
@@ -690,7 +685,8 @@ def view_flat_hcurves(token, dstore):
     """
     oq = dstore['oqparam']
     nsites = len(dstore['sitecol'])
-    mean = getters.PmapGetter(dstore).get_mean()
+    rlzs_assoc = dstore['csm_info'].get_rlzs_assoc()
+    mean = getters.PmapGetter(dstore, rlzs_assoc).get_mean()
     array = calc.convert_to_array(mean, nsites, oq.imtls)
     res = numpy.zeros(1, array.dtype)
     for name in array.dtype.names:
@@ -708,9 +704,10 @@ def view_flat_hmaps(token, dstore):
     """
     oq = dstore['oqparam']
     assert oq.poes
+    rlzs_assoc = dstore['csm_info'].get_rlzs_assoc()
     nsites = len(dstore['sitecol'])
     pdic = DictArray({imt: oq.poes for imt in oq.imtls})
-    mean = getters.PmapGetter(dstore).get_mean()
+    mean = getters.PmapGetter(dstore, rlzs_assoc).get_mean()
     hmaps = calc.make_hmap(mean, oq.imtls, oq.poes)
     array = calc.convert_to_array(hmaps, nsites, pdic)
     res = numpy.zeros(1, array.dtype)
@@ -732,14 +729,13 @@ def view_dupl_sources(token, dstore):
         if len(records) > 1:  # dupl
             calc_time = records['calc_time'].sum()
             tot_calc_time += calc_time
-            grp_ids = sorted(rec['grp_id'] for rec in records)
-            tbl.append((source_id, calc_time, grp_ids))
+            tbl.append((source_id, calc_time, len(records)))
     if tbl and info.attrs['has_dupl_sources']:
         tot = info['calc_time'].sum()
         percent = tot_calc_time / tot * 100
         m = '\nTotal calc_time in duplicated sources: %d/%d (%d%%)' % (
             tot_calc_time, tot, percent)
-        return rst_table(tbl, ['source_id', 'calc_time', 'src_group_ids']) + m
+        return rst_table(tbl, ['source_id', 'calc_time', 'num_dupl']) + m
     else:
         return 'There are no duplicated sources'
 
@@ -800,7 +796,8 @@ def view_pmap(token, dstore):
     """
     name = token.split(':')[1]  # called as pmap:name
     pmap = {}
-    pgetter = getters.PmapGetter(dstore)
+    rlzs_assoc = dstore['csm_info'].get_rlzs_assoc()
+    pgetter = getters.PmapGetter(dstore, rlzs_assoc)
     for grp, dset in dstore['poes'].items():
         if dset.attrs['name'] == name:
             pmap = pgetter.get_mean(grp)

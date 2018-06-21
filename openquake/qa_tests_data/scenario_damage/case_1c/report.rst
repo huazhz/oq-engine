@@ -3,8 +3,8 @@ Scenario Damage
 
 ============== ===================
 checksum32     2,048,857,716      
-date           2018-04-30T11:21:29
-engine_version 3.1.0-gitb0812f0   
+date           2018-06-05T06:38:21
+engine_version 3.2.0-git65c4735   
 ============== ===================
 
 num_sites = 1, num_levels = 26
@@ -73,12 +73,13 @@ Wood     1.00000 NaN    1   1   1         1
 
 Slowest operations
 ------------------
-======================= ======== ========= ======
-operation               time_sec memory_mb counts
-======================= ======== ========= ======
-building riskinputs     0.00394  0.0       1     
-saving gmfs             0.00393  0.0       1     
-computing gmfs          0.00269  0.0       1     
-reading exposure        0.00267  0.0       1     
-reading site collection 0.00233  0.0       1     
-======================= ======== ========= ======
+======================= ========= ========= ======
+operation               time_sec  memory_mb counts
+======================= ========= ========= ======
+ScenarioCalculator.run  0.16233   0.32812   1     
+reading site collection 0.00911   0.0       1     
+building riskinputs     0.00691   0.0       1     
+saving gmfs             0.00411   0.0       1     
+computing gmfs          0.00283   0.08984   1     
+reading exposure        7.317E-04 0.0       1     
+======================= ========= ========= ======

@@ -20,7 +20,6 @@
 """
 Utility functions of general interest.
 """
-from __future__ import division, print_function
 import os
 import sys
 import imp
@@ -338,7 +337,7 @@ def assert_close(a, b, rtol=1e-07, atol=0, context=None):
 _tmp_paths = []
 
 
-def writetmp(content=None, dir=None, prefix="tmp", suffix="tmp"):
+def gettemp(content=None, dir=None, prefix="tmp", suffix="tmp"):
     """Create temporary file with the given content.
 
     Please note: the temporary file must be deleted by the caller.
@@ -366,11 +365,14 @@ def writetmp(content=None, dir=None, prefix="tmp", suffix="tmp"):
 @atexit.register
 def removetmp():
     """
-    Remove the temporary files created by writetmp
+    Remove the temporary files created by gettemp
     """
     for path in _tmp_paths:
         if os.path.exists(path):  # not removed yet
-            os.remove(path)
+            try:
+                os.remove(path)
+            except PermissionError:
+                pass
 
 
 def git_suffix(fname):
@@ -450,12 +452,7 @@ def import_all(module_or_package):
                 # works at any level of nesting
                 modname = (module_or_package + cwd[n:].replace(os.sep, '.') +
                            '.' + os.path.basename(f[:-3]))
-                try:
-                    importlib.import_module(modname)
-                except Exception as exc:
-                    print('Could not import %s: %s: %s' % (
-                        modname, exc.__class__.__name__, exc),
-                          file=sys.stderr)
+                importlib.import_module(modname)
     return set(sys.modules) - already_imported
 
 
@@ -522,7 +519,7 @@ class CallableDict(collections.OrderedDict):
     in openquake.calculators.export
     """
     def __init__(self, keyfunc=lambda key: key, keymissing=None):
-        super(CallableDict, self).__init__()
+        super().__init__()
         self.keyfunc = keyfunc
         self.keymissing = keymissing
 
@@ -894,9 +891,10 @@ class DeprecationWarning(UserWarning):
     """
 
 
-def deprecated(message):
+@decorator
+def deprecated(func, message='', *args, **kw):
     """
-    Return a decorator to make deprecated functions.
+    A family of decorators to mark deprecated functions.
 
     :param message:
         the message to print the first time the
@@ -911,15 +909,28 @@ def deprecated(message):
     Notice that if the function is called several time, the deprecation
     warning will be displayed only the first time.
     """
-    def _deprecated(func, *args, **kw):
-        msg = '%s.%s has been deprecated. %s' % (
-            func.__module__, func.__name__, message)
-        if not hasattr(func, 'called'):
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            func.called = 0
-        func.called += 1
-        return func(*args, **kw)
-    return decorator(_deprecated)
+    msg = '%s.%s has been deprecated. %s' % (
+        func.__module__, func.__name__, message)
+    if not hasattr(func, 'called'):
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        func.called = 0
+    func.called += 1
+    return func(*args, **kw)
+
+
+def random_filter(objects, reduction_factor, seed=42):
+    """
+    Given a list of objects, returns a sublist by extracting randomly
+    some elements. The reduction factor (< 1) tells how small is the extracted
+    list compared to the original list.
+    """
+    assert 0 < reduction_factor <= 1, reduction_factor
+    rnd = random.Random(seed)
+    out = []
+    for obj in objects:
+        if rnd.random() <= reduction_factor:
+            out.append(obj)
+    return out
 
 
 def safeprint(*args, **kwargs):

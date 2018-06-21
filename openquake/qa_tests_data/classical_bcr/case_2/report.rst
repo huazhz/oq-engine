@@ -3,8 +3,8 @@ Classical BCR test
 
 ============== ===================
 checksum32     1,808,877,325      
-date           2018-04-30T11:21:47
-engine_version 3.1.0-gitb0812f0   
+date           2018-06-05T06:38:43
+engine_version 3.2.0-git65c4735   
 ============== ===================
 
 num_sites = 11, num_levels = 8
@@ -100,9 +100,9 @@ Slowest sources
 ========= ============ ============ ========= ========== ========= ========= ======
 source_id source_class num_ruptures calc_time split_time num_sites num_split events
 ========= ============ ============ ========= ========== ========= ========= ======
-229       AreaSource   264          0.00101   0.01570    203       38        0     
-231       AreaSource   414          8.643E-04 0.02052    697       69        0     
-232       AreaSource   150          4.301E-04 0.01119    270       30        0     
+232       AreaSource   150          0.00617   0.01200    9.00000   30        0     
+229       AreaSource   264          0.00599   0.01626    5.34211   38        0     
+231       AreaSource   414          0.00520   0.02262    10        69        0     
 ========= ============ ============ ========= ========== ========= ========= ======
 
 Computation times by source typology
@@ -110,7 +110,7 @@ Computation times by source typology
 ============ ========= ======
 source_class calc_time counts
 ============ ========= ======
-AreaSource   0.00231   3     
+AreaSource   0.01736   3     
 ============ ========= ======
 
 Duplicated sources
@@ -121,51 +121,57 @@ Information about the tasks
 ---------------------------
 ================== ======= ======= ======= ======= =========
 operation-duration mean    stddev  min     max     num_tasks
-count_ruptures     0.00475 0.00280 0.00202 0.00762 3        
+RtreeFilter        0.00440 0.00271 0.00124 0.01533 48       
+count_eff_ruptures 0.00940 0.00175 0.00774 0.01123 3        
 ================== ======= ======= ======= ======= =========
 
 Fastest task
 ------------
-taskno=3, weight=20, duration=0 s, sources="232"
+taskno=3, weight=22, duration=0 s, sources="232"
 
 ======== ======= ======= ======= ======= =
 variable mean    stddev  min     max     n
 ======== ======= ======= ======= ======= =
-nsites   7.80000 0.44721 7       8       5
-weight   4.18784 0.12254 3.96863 4.24264 5
+nsites   9.20000 1.30384 8       11      5
+weight   4.54073 0.31976 4.24264 4.97494 5
 ======== ======= ======= ======= ======= =
 
 Slowest task
 ------------
-taskno=1, weight=330, duration=0 s, sources="229 231"
+taskno=1, weight=328, duration=0 s, sources="229 231"
 
 ======== ======= ======= ======= ======= ==
 variable mean    stddev  min     max     n 
 ======== ======= ======= ======= ======= ==
-nsites   7.75000 3.27530 1       11      68
-weight   4.85517 1.24910 1.80000 5.96992 68
+nsites   7.66176 3.22588 1       11      68
+weight   4.82933 1.23456 1.80000 5.96992 68
 ======== ======= ======= ======= ======= ==
 
-Informational data
-------------------
-============== ========================================================================= ========
-task           sent                                                                      received
-count_ruptures sources=43.2 KB srcfilter=3.69 KB param=1.32 KB monitor=990 B gsims=924 B 1.19 KB 
-============== ========================================================================= ========
+Data transfer
+-------------
+================== ========================================================================== ========
+task               sent                                                                       received
+RtreeFilter        srcs=77.11 KB monitor=16.22 KB srcfilter=13.08 KB                          87.33 KB
+count_eff_ruptures sources=50.88 KB param=1.38 KB monitor=1.03 KB gsims=924 B srcfilter=699 B 1.19 KB 
+================== ========================================================================== ========
 
 Slowest operations
 ------------------
 ============================== ========= ========= ======
 operation                      time_sec  memory_mb counts
 ============================== ========= ========= ======
-reading composite source model 0.05341   0.0       1     
-splitting sources              0.04804   0.0       1     
-managing sources               0.02353   0.0       1     
-total count_ruptures           0.01426   1.80078   3     
-reading exposure               0.00440   0.0       1     
-store source_info              0.00426   0.0       1     
-reading site collection        0.00426   0.0       1     
-unpickling count_ruptures      1.307E-04 0.0       3     
-aggregate curves               7.010E-05 0.0       3     
-saving probability maps        3.386E-05 0.0       1     
+ClassicalCalculator.run        0.68397   0.0       1     
+PSHACalculator.run             0.61930   0.0       1     
+managing sources               0.34057   0.0       1     
+total prefilter                0.21119   3.46875   48    
+reading composite source model 0.05589   0.0       1     
+splitting sources              0.05138   0.0       1     
+total count_eff_ruptures       0.02819   5.87891   3     
+unpickling prefilter           0.01596   0.0       48    
+store source_info              0.00701   0.0       1     
+reading site collection        0.00396   0.0       1     
+reading exposure               0.00183   0.0       1     
+aggregate curves               0.00103   0.0       3     
+unpickling count_eff_ruptures  8.812E-04 0.0       3     
+saving probability maps        2.401E-04 0.0       1     
 ============================== ========= ========= ======

@@ -56,15 +56,14 @@ PY_MODULES = ['openquake.commands.__main__']
 install_requires = [
     'mock >=1.0, <2.1',
     'nose >=1.3, <1.4',
-    'h5py >=2.6, <2.9',
+    'h5py >=2.8, <2.9',
     'numpy >=1.14, <1.15',
     'scipy >=1.0.1, <1.1',
     'pyzmq <18.0',
-    'psutil >=1.2, <5.5',
-    'rtree ==0.8.3',
+    'psutil >=2.0, <5.5',
     'shapely >=1.3, <1.7',
     'docutils >=0.11, <0.15',
-    'decorator >=3.4',
+    'decorator >=4.3',
     'django >=1.10, <2.1',
     'matplotlib >=1.5, <2.2',
     'requests >=2.9, <2.19',
@@ -73,6 +72,7 @@ install_requires = [
 ]
 
 extras_require = {
+    'rtree': ['rtree ==0.8.3'],
     'setproctitle': ["setproctitle"],
     'prctl': ["python-prctl ==1.6.1"],
     'celery':  ["celery >=4.0, <4.2"],
@@ -124,7 +124,9 @@ setup(
     namespace_packages=['openquake'],
     install_requires=install_requires,
     extras_require=extras_require,
-    scripts=['bin/oq'],
+    entry_points={
+        'console_scripts': ['oq = openquake.commands.__main__:oq'],
+    },
     test_loader='openquake.baselib.runtests:TestLoader',
     test_suite='openquake.risklib,openquake.commonlib,openquake.calculators',
     zip_safe=False,

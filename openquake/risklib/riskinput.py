@@ -30,6 +30,7 @@ from openquake.risklib import scientific, riskmodels
 class ValidationError(Exception):
     pass
 
+
 U32 = numpy.uint32
 F32 = numpy.float32
 by_taxonomy = operator.attrgetter('taxonomy')
@@ -221,28 +222,22 @@ class CompositeRiskModel(collections.Mapping):
         with monitor('getting hazard'):
             hazard_getter.init()
         sids = hazard_getter.sids
+
         # group the assets by taxonomy
         dic = collections.defaultdict(list)
         for sid, assets in zip(sids, riskinput.assets_by_site):
             group = groupby(assets, by_taxonomy)
             for taxonomy in group:
-                epsgetter = riskinput.epsilon_getter
-                dic[taxonomy].append((sid, group[taxonomy], epsgetter))
-        if hasattr(hazard_getter, 'rlzs_by_gsim'):
-            # save memory in event based risk by working one gsim at the time
-            for gsim in hazard_getter.rlzs_by_gsim:
-                for out in self._gen_outputs(hazard_getter, dic, gsim):
-                    yield out
-        else:
-            for out in self._gen_outputs(hazard_getter, dic, None):
-                yield out
+                dic[taxonomy].append(
+                    (sid, group[taxonomy], riskinput.epsilon_getter))
+        yield from self._gen_outputs(hazard_getter, dic)
 
         if hasattr(hazard_getter, 'gmdata'):  # for event based risk
             riskinput.gmdata = hazard_getter.gmdata
 
-    def _gen_outputs(self, hazard_getter, dic, gsim):
+    def _gen_outputs(self, hazard_getter, dic):
         with self.monitor('getting hazard'):
-            hazard = hazard_getter.get_hazard(gsim)
+            hazard = hazard_getter.get_hazard()
         imti = {imt: i for i, imt in enumerate(hazard_getter.imtls)}
         with self.monitor('computing risk'):
             for taxonomy in sorted(dic):
@@ -251,7 +246,17 @@ class CompositeRiskModel(collections.Mapping):
                           for lt in self.loss_types]  # imt for each loss type
                 for sid, assets, epsgetter in dic[taxonomy]:
                     for rlzi, haz in sorted(hazard[sid].items()):
-                        if isinstance(haz, numpy.ndarray):  # gmf-based calc
+                        if isinstance(haz, numpy.ndarray):
+                            # NB: in GMF-based calculations the order in which
+                            # the gmfs are stored is random since it depends on
+                            # which hazard task ends first; here we reorder
+                            # the gmfs by event ID; this is convenient in
+                            # general and mandatory for the case of
+                            # VulnerabilityFunctionWithPMF, otherwise the
+                            # sample method would receive the means in random
+                            # order and produce random results even if the
+                            # seed is set correctly; very tricky indeed! (MS)
+                            haz.sort(order='eid')
                             eids = haz['eid']
                             data = [(haz['gmv'][:, imti[imt]], eids)
                                     for imt in imt_lt]

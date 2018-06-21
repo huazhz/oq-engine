@@ -17,15 +17,13 @@
 Module :mod:`openquake.hazardlib.source.base` defines a base class for
 seismic sources.
 """
-from __future__ import division
 import abc
 import math
 from openquake.baselib.slots import with_slots
-from openquake.baselib.python3compat import with_metaclass
 
 
 @with_slots
-class BaseSeismicSource(with_metaclass(abc.ABCMeta)):
+class BaseSeismicSource(metaclass=abc.ABCMeta):
     """
     Base class representing a seismic source, that is a structure generating
     earthquake ruptures.
@@ -39,9 +37,10 @@ class BaseSeismicSource(with_metaclass(abc.ABCMeta)):
         Source's tectonic regime. See :class:`openquake.hazardlib.const.TRT`.
     """
     _slots_ = ['source_id', 'name', 'tectonic_region_type',
-               'src_group_id', 'num_ruptures', 'seed', 'id']
+               'src_group_id', 'num_ruptures', 'seed', 'id', 'min_mag']
     RUPTURE_WEIGHT = 1.  # overridden in (Multi)PointSource, AreaSource
     ngsims = 1
+    min_mag = 0  # set in get_oqparams and CompositeSourceModel.filter
 
     @abc.abstractproperty
     def MODIFICATIONS(self):
@@ -145,7 +144,7 @@ class BaseSeismicSource(with_metaclass(abc.ABCMeta)):
 
 
 @with_slots
-class ParametricSeismicSource(with_metaclass(abc.ABCMeta, BaseSeismicSource)):
+class ParametricSeismicSource(BaseSeismicSource, metaclass=abc.ABCMeta):
     """
     Parametric Seismic Source generates earthquake ruptures from source
     parameters, and associated probabilities of occurrence are defined through
@@ -218,7 +217,8 @@ class ParametricSeismicSource(with_metaclass(abc.ABCMeta, BaseSeismicSource)):
         """
         return [(mag, occ_rate)
                 for (mag, occ_rate) in self.mfd.get_annual_occurrence_rates()
-                if min_rate is None or occ_rate > min_rate]
+                if (min_rate is None or occ_rate > min_rate) and
+                mag >= self.min_mag]
 
     def get_min_max_mag(self):
         """

@@ -36,7 +36,7 @@ from mock import Mock
 
 import openquake.hazardlib
 from openquake.hazardlib import geo
-from openquake.baselib.general import writetmp
+from openquake.baselib.general import gettemp
 from openquake.hazardlib import valid
 from openquake.commonlib import logictree, readinput, tests, source
 from openquake.hazardlib.tom import PoissonTOM
@@ -59,8 +59,8 @@ class _TestableSourceModelLogicTree(logictree.SourceModelLogicTree):
             self.validate_tree = self.__fail
             self.validate_filters = self.__fail
             self.validate_uncertainty_value = self.__fail
-        f = writetmp(files[filename], suffix='.' + filename)
-        super(_TestableSourceModelLogicTree, self).__init__(f, validate)
+        f = gettemp(files[filename], suffix='.' + filename)
+        super().__init__(f, validate)
 
     def _get_source_model(self, filename):
         return StringIO(self.files[filename].encode('utf-8'))
@@ -2134,6 +2134,37 @@ class GsimLogicTreeTestCase(unittest.TestCase):
         self.parse_invalid(
             xml, logictree.InvalidLogicTree,
             "<StringIO>: Duplicated branchSetID bs1")
+
+    def test_branch_id_not_unique(self):
+        xml = _make_nrml("""
+<logicTree logicTreeID="lt1">
+    <logicTreeBranchingLevel branchingLevelID="bl4">
+        <logicTreeBranchSet uncertaintyType="gmpeModel"
+                            branchSetID="GrpD"
+                            applyToTectonicRegionType="Subduction Interface">
+
+            <logicTreeBranch branchID="GrpD_Gmpe1">
+                <uncertaintyModel>AbrahamsonEtAl2015SInter</uncertaintyModel>
+                <uncertaintyWeight>0.334</uncertaintyWeight>
+            </logicTreeBranch>
+
+            <logicTreeBranch branchID="GrpD_Gmpe2">
+                <uncertaintyModel>McVerry2006SInter</uncertaintyModel>
+                <uncertaintyWeight>0.333</uncertaintyWeight>
+            </logicTreeBranch>
+
+            <logicTreeBranch branchID="GrpD_Gmpe2">
+                <uncertaintyModel>ZhaoEtAl2016SInter</uncertaintyModel>
+                <uncertaintyWeight>0.333</uncertaintyWeight>
+            </logicTreeBranch>
+
+        </logicTreeBranchSet>
+    </logicTreeBranchingLevel>
+</logicTree>
+        """)
+        self.parse_invalid(
+            xml, logictree.InvalidLogicTree,
+            "There where duplicated branchIDs in <StringIO>")
 
     def test_invalid_gsim(self):
         xml = _make_nrml("""\

@@ -3,8 +3,8 @@ Event-Based Hazard QA Test, Case 2
 
 ============== ===================
 checksum32     2,964,792,741      
-date           2018-04-30T11:22:33
-engine_version 3.1.0-gitb0812f0   
+date           2018-06-05T06:39:35
+engine_version 3.2.0-git65c4735   
 ============== ===================
 
 num_sites = 1, num_levels = 4
@@ -77,7 +77,7 @@ Slowest sources
 ========= ============ ============ ========= ========== ========= ========= ======
 source_id source_class num_ruptures calc_time split_time num_sites num_split events
 ========= ============ ============ ========= ========== ========= ========= ======
-1         PointSource  3,000        4.25553   7.629E-06  1         1         3     
+1         PointSource  3,000        4.61217   6.914E-06  1.00000   1         3     
 ========= ============ ============ ========= ========== ========= ========= ======
 
 Computation times by source typology
@@ -85,7 +85,7 @@ Computation times by source typology
 ============ ========= ======
 source_class calc_time counts
 ============ ========= ======
-PointSource  4.25553   1     
+PointSource  4.61217   1     
 ============ ========= ======
 
 Duplicated sources
@@ -96,29 +96,34 @@ Information about the tasks
 ---------------------------
 ================== ======= ====== ======= ======= =========
 operation-duration mean    stddev min     max     num_tasks
-compute_ruptures   4.25782 NaN    4.25782 4.25782 1        
+RtreeFilter        0.00526 NaN    0.00526 0.00526 1        
+compute_ruptures   4.61960 NaN    4.61960 4.61960 1        
 ================== ======= ====== ======= ======= =========
 
-Informational data
-------------------
+Data transfer
+-------------
 ================ ======================================================================= ========
 task             sent                                                                    received
-compute_ruptures sources=13.11 KB src_filter=716 B param=585 B monitor=330 B gsims=120 B 4.17 KB 
+RtreeFilter      srcs=0 B srcfilter=0 B monitor=0 B                                      13.02 KB
+compute_ruptures sources=13.07 KB param=604 B monitor=353 B src_filter=233 B gsims=120 B 3.77 KB 
 ================ ======================================================================= ========
 
 Slowest operations
 ------------------
-============================== ========= ========= ======
-operation                      time_sec  memory_mb counts
-============================== ========= ========= ======
-managing sources               4.28366   0.0       1     
-total compute_ruptures         4.25782   3.35547   1     
-saving ruptures                0.00695   0.0       1     
-reading composite source model 0.00690   0.0       1     
-store source_info              0.00672   0.0       1     
-setting event years            0.00218   0.0       1     
-making contexts                0.00162   0.0       3     
-unpickling compute_ruptures    5.782E-04 0.0       1     
-splitting sources              4.988E-04 0.0       1     
-reading site collection        2.515E-04 0.0       1     
-============================== ========= ========= ======
+=============================== ========= ========= ======
+operation                       time_sec  memory_mb counts
+=============================== ========= ========= ======
+EventBasedRuptureCalculator.run 4.97745   0.0       1     
+managing sources                4.81452   0.0       1     
+total compute_ruptures          4.61960   6.93359   1     
+reading composite source model  0.00801   0.0       1     
+saving ruptures                 0.00781   0.0       1     
+store source_info               0.00721   0.0       1     
+total prefilter                 0.00526   0.0       1     
+setting event years             0.00213   0.0       1     
+unpickling compute_ruptures     0.00137   0.0       1     
+reading site collection         9.229E-04 0.0       1     
+making contexts                 8.340E-04 0.0       3     
+unpickling prefilter            3.333E-04 0.0       1     
+splitting sources               3.207E-04 0.0       1     
+=============================== ========= ========= ======

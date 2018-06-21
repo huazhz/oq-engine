@@ -20,14 +20,13 @@
 """
 Utilities to build a report writer generating a .rst report for a calculation
 """
-from __future__ import print_function, unicode_literals
 from openquake.baselib.python3compat import decode
 import os
 import sys
 import mock
 from openquake.baselib.python3compat import encode
 from openquake.commonlib import readinput
-from openquake.calculators.classical import PSHACalculator, count_ruptures
+from openquake.calculators.classical import PSHACalculator, count_eff_ruptures
 from openquake.calculators import views
 
 
@@ -49,7 +48,7 @@ class ReportWriter(object):
         'ruptures_per_trt': 'Number of ruptures per tectonic region type',
         'ruptures_events': 'Specific information for event based',
         'rlzs_assoc': 'Realizations per (TRT, GSIM)',
-        'job_info': 'Informational data',
+        'job_info': 'Data transfer',
         'biggest_ebr_gmf': 'Maximum memory allocated for the GMFs',
         'avglosses_data_transfer': 'Estimated data transfer for the avglosses',
         'exposure_info': 'Exposure model',
@@ -106,7 +105,7 @@ class ReportWriter(object):
         if 'task_info' in ds:
             self.add('task_info')
             tasks = set(ds['task_info'])
-            if 'classical' in tasks or 'count_ruptures' in tasks:
+            if 'classical' in tasks or 'count_eff_ruptures' in tasks:
                 self.add('task_classical:0')
                 self.add('task_classical:-1')
             self.add('job_info')
@@ -139,7 +138,7 @@ def build_report(job_ini, output_dir=None):
     # some taken is care so that the real calculation is not run:
     # the goal is to extract information about the source management only
     p = mock.patch.object
-    with p(PSHACalculator, 'core_task', count_ruptures):
+    with p(PSHACalculator, 'core_task', count_eff_ruptures):
         calc.prefilter = False
         if calc.pre_calculator == 'event_based_risk':
             # compute the ruptures only, not the risk

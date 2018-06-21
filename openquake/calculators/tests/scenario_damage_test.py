@@ -25,8 +25,7 @@ from openquake.commonlib.writers import write_csv
 from openquake.qa_tests_data.scenario_damage import (
     case_1, case_1c, case_1h, case_2, case_3, case_4, case_4b, case_5, case_5a,
     case_6, case_7)
-from openquake.calculators.tests import (
-    CalculatorTestCase, strip_calc_id, REFERENCE_OS)
+from openquake.calculators.tests import CalculatorTestCase, strip_calc_id
 from openquake.calculators.extract import extract
 from openquake.calculators.export import export
 from openquake.calculators.views import view
@@ -44,8 +43,7 @@ class ScenarioDamageTestCase(CalculatorTestCase):
                           if f.endswith(exports) and 'by_taxon' not in f)
         self.assertEqual(len(got), len(expected))
         for fname, actual in zip(expected, got):
-            if REFERENCE_OS:  # broken on macOS
-                self.assertEqualFiles('expected/%s' % fname, actual)
+            self.assertEqualFiles('expected/%s' % fname, actual)
 
     @attr('qa', 'risk', 'scenario_damage')
     def test_case_1(self):
@@ -78,6 +76,10 @@ RM       4,000
         total = extract(self.calc.datastore, 'aggdamages/structural')
         aae([[0.4799988, 0.3537988, 0.0655346, 0.018449, 0.0822188]],
             total)  # shape (R, D) = (1, 5)
+
+        # check extract gmf_data works with a filtered site collection
+        gmf_data = dict(extract(self.calc.datastore, 'gmf_data'))
+        self.assertEqual(gmf_data['rlz-000'].shape, (7,))
 
     @attr('qa', 'risk', 'scenario_damage')
     def test_case_1h(self):

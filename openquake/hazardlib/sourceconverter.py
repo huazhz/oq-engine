@@ -15,7 +15,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with OpenQuake. If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
 import operator
 import collections
 import logging
@@ -146,7 +145,10 @@ class SourceGroup(collections.Sequence):
         """
         assert src.tectonic_region_type == self.trt, (
             src.tectonic_region_type, self.trt)
-        self.tot_ruptures += get_set_num_ruptures(src)
+        nr = get_set_num_ruptures(src)
+        if nr == 0:  # the minimum_magnitude filters all ruptures
+            return
+        self.tot_ruptures += nr
         self.sources.append(src)
         min_mag, max_mag = src.get_min_max_mag()
         prev_min_mag = self.min_mag

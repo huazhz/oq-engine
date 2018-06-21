@@ -3,8 +3,8 @@ Event Based Risk Lisbon
 
 ============== ===================
 checksum32     2,968,384,188      
-date           2018-04-30T11:21:35
-engine_version 3.1.0-gitb0812f0   
+date           2018-06-05T06:38:31
+engine_version 3.2.0-git65c4735   
 ============== ===================
 
 num_sites = 1, num_levels = 40
@@ -120,17 +120,17 @@ Slowest sources
 ========= ============ ============ ========= ========== ========= ========= ======
 source_id source_class num_ruptures calc_time split_time num_sites num_split events
 ========= ============ ============ ========= ========== ========= ========= ======
-0         AreaSource   6,075        8.33714   0.04261    270       270       77    
-2         AreaSource   4,901        4.72237   0.04016    228       228       170   
-10        AreaSource   1,116        1.82385   0.02117    124       124       0     
-6         AreaSource   1,054        1.38653   0.01199    68        68        102   
-1         AreaSource   989          1.16245   0.01040    86        86        59    
-3         AreaSource   812          1.07606   0.00730    56        56        0     
-5         AreaSource   551          0.87138   0.01020    38        38        50    
-9         AreaSource   612          0.86002   0.01512    98        98        49    
-7         AreaSource   429          0.60738   0.00787    66        66        20    
-4         AreaSource   310          0.57401   0.01583    62        62        27    
-8         AreaSource   342          0.44143   0.00649    38        38        19    
+0         AreaSource   6,075        9.14229   0.04723    1.00000   270       63    
+2         AreaSource   4,901        4.93022   0.04278    1.00000   228       162   
+10        AreaSource   1,116        1.80049   0.02252    1.00000   124       0     
+1         AreaSource   989          1.58030   0.01110    1.00000   86        66    
+6         AreaSource   1,054        1.33715   0.01307    1.00000   68        102   
+9         AreaSource   612          0.93096   0.01560    1.00000   98        49    
+3         AreaSource   812          0.88397   0.00764    1.00000   56        0     
+5         AreaSource   551          0.80051   0.01104    1.00000   38        41    
+7         AreaSource   429          0.65461   0.00872    1.00000   66        27    
+8         AreaSource   342          0.59101   0.00723    1.00000   38        19    
+4         AreaSource   310          0.55689   0.01702    1.00000   62        42    
 ========= ============ ============ ========= ========== ========= ========= ======
 
 Computation times by source typology
@@ -138,7 +138,7 @@ Computation times by source typology
 ============ ========= ======
 source_class calc_time counts
 ============ ========= ======
-AreaSource   21        11    
+AreaSource   23        11    
 ============ ========= ======
 
 Duplicated sources
@@ -149,30 +149,35 @@ Information about the tasks
 ---------------------------
 ================== ======= ======= ======= ======= =========
 operation-duration mean    stddev  min     max     num_tasks
-compute_ruptures   1.22219 0.28906 0.58107 1.49227 18       
+RtreeFilter        0.01083 0.00484 0.00364 0.02409 60       
+compute_ruptures   1.30234 0.29166 0.58776 1.58284 18       
 ================== ======= ======= ======= ======= =========
 
-Informational data
-------------------
-================ ================================================================================= ========
-task             sent                                                                              received
-compute_ruptures sources=437.82 KB param=15.52 KB src_filter=12.59 KB monitor=5.8 KB gsims=3.87 KB 80.45 KB
-================ ================================================================================= ========
+Data transfer
+-------------
+================ ================================================================================ =========
+task             sent                                                                             received 
+RtreeFilter      srcs=463.61 KB monitor=20.27 KB srcfilter=16.35 KB                               475.29 KB
+compute_ruptures sources=465.75 KB param=15.86 KB monitor=6.21 KB src_filter=4.1 KB gsims=3.87 KB 80.64 KB 
+================ ================================================================================ =========
 
 Slowest operations
 ------------------
-============================== ======== ========= ======
-operation                      time_sec memory_mb counts
-============================== ======== ========= ======
-total compute_ruptures         21       3.41797   18    
-managing sources               1.66685  0.0       1     
-reading composite source model 0.39116  0.0       1     
-splitting sources              0.38066  0.13672   1     
-saving ruptures                0.01789  0.0       18    
-making contexts                0.01579  0.0       15    
-store source_info              0.00417  0.0       1     
-unpickling compute_ruptures    0.00390  0.0       18    
-reading exposure               0.00302  0.0       1     
-reading site collection        0.00279  0.0       1     
-setting event years            0.00116  0.0       1     
-============================== ======== ========= ======
+=============================== ======== ========= ======
+operation                       time_sec memory_mb counts
+=============================== ======== ========= ======
+total compute_ruptures          23       7.23438   18    
+EventBasedRuptureCalculator.run 3.12104  2.61719   1     
+managing sources                2.08111  2.22266   1     
+total prefilter                 0.64959  3.46875   60    
+reading composite source model  0.40735  0.0       1     
+splitting sources               0.40727  0.05469   1     
+unpickling prefilter            0.04170  0.15625   60    
+saving ruptures                 0.02465  0.94922   18    
+making contexts                 0.01724  0.0       15    
+unpickling compute_ruptures     0.00729  0.0       18    
+store source_info               0.00545  0.33984   1     
+reading site collection         0.00274  0.0       1     
+reading exposure                0.00164  0.0       1     
+setting event years             0.00125  0.0       1     
+=============================== ======== ========= ======
