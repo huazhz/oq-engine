@@ -284,7 +284,7 @@ def _agg(losses, idxs):
     return losses[numpy.array(sorted(idxs))].sum(axis=0)
 
 
-def _filter_agg(assetcol, losses, selected, stats=''):
+def _filter_agg(assetcol, losses, selected):
     # losses is an array of shape (A, ..., R) with A=#assets, R=#realizations
     aids_by_tag = assetcol.get_aids_by_tag()
     idxs = set(range(len(assetcol)))
@@ -299,7 +299,7 @@ def _filter_agg(assetcol, losses, selected, stats=''):
         raise ValueError('Too many * as tag values in %s' % tagnames)
     elif not tagnames:  # return an array of shape (..., R)
         return ArrayWrapper(
-            _agg(losses, idxs), dict(selected=encode(selected), stats=stats))
+            _agg(losses, idxs), dict(selected=encode(selected)))
     else:  # return an array of shape (T, ..., R)
         [tagname] = tagnames
         _tags = list(assetcol.tagcol.gen_tags(tagname))
@@ -313,7 +313,7 @@ def _filter_agg(assetcol, losses, selected, stats=''):
                 tags.append(tag)
         return ArrayWrapper(
             numpy.array(data),
-            dict(selected=encode(selected), tags=encode(tags), stats=stats))
+            dict(selected=encode(selected), tags=encode(tags)))
 
 
 def get_loss_type_tags(what):
@@ -352,7 +352,9 @@ def extract_agglosses(dstore, what):
         losses = dstore['avg_losses-rlzs'][:, :, l]
     else:
         raise KeyError('No losses found in %s' % dstore)
-    return _filter_agg(dstore['assetcol'], losses, tags, stats)
+    arr = _filter_agg(dstore['assetcol'], losses, tags)
+    arr.stats = stats
+    return arr
 
 
 @extract.add('aggdamages')
@@ -391,7 +393,10 @@ def extract_aggcurves(dstore, what):
     else:
         raise KeyError('No curves found in %s' % dstore)
     stats = dstore['curves-stats'].attrs['stats']
-    return _filter_agg(dstore['assetcol'], losses, tags, stats)
+    arr = _filter_agg(dstore['assetcol'], losses, tags)
+    arr.stats = stats
+    arr.return_periods = dstore['curves-stats'].attrs['return_periods']
+    return arr
 
 
 @extract.add('losses_by_asset')
